@@ -1,4 +1,6 @@
 import boto3
+import uuid
+from datetime import datetime
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, trim
 
@@ -15,6 +17,17 @@ spark = SparkSession.builder \
 # AWS S3 Setup
 s3 = boto3.client('s3')
 curated_base = "lab4-curated"
+log_bucket = "lab3-raw"
+log_prefix = "logs/"
+
+# Helper function for logging to S3
+def log_to_s3(message: str, level: str = "INFO", context: str = "ETL"):
+    now = datetime.utcnow()
+    timestamp = now.strftime("%Y-%m-%dT%H-%M-%S")
+    unique_id = str(uuid.uuid4())[:8]
+    filename = f"{log_prefix}{now.strftime('%Y/%m/%d')}/{context}_{level}_{timestamp}_{unique_id}.log"
+    content = f"[{timestamp}] [{level}] [{context}] {message}"
+    s3.put_object(Bucket=log_bucket, Key=filename, Body=content.encode("utf-8"))
 
 # Paths and required columns based on KPI requirements
 paths = {
@@ -52,29 +65,43 @@ def ensure_s3_folder(bucket_name, prefix):
 
 # Process each dataset
 for name, cfg in paths.items():
-    print(f"Processing {name}...")
-    input_path = cfg["input"]
-    output_path = cfg["output"]
-    selected_columns = cfg["columns"]
+    try:
+        log_to_s3(f"Starting processing for dataset: {name}", context=name)
 
-    # Extract bucket and prefix
-    bucket_name = output_path.replace("s3a://", "").split("/")[0]
-    prefix = "/".join(output_path.replace("s3a://", "").split("/")[1:])
+        input_path = cfg["input"]
+        output_path = cfg["output"]
+        selected_columns = cfg["columns"]
 
-    # Ensure output folder exists
-    ensure_s3_folder(bucket_name, prefix)
+        # Extract bucket and prefix
+        bucket_name = output_path.replace("s3a://", "").split("/")[0]
+        prefix = "/".join(output_path.replace("s3a://", "").split("/")[1:])
 
-    # Load data
-    df = spark.read.option("header", True).csv(input_path)
+        ensure_s3_folder(bucket_name, prefix)
 
-    # Select only necessary columns (handle missing with try/except if needed)
-    df = df.select([trim(col(c)).alias(c) for c in selected_columns])
+        # Load data
+        df = spark.read.option("header", True).csv(input_path)
 
-    # Basic cleaning: drop nulls
-    df_cleaned = df.dropna()
+        # Select and trim relevant columns
+        df = df.select([trim(col(c)).alias(c) for c in selected_columns])
 
-    # Write cleaned data to curated S3 path in Parquet format
-    df_cleaned.write.mode("overwrite").parquet(output_path)
+        # Log pre-clean row count
+        raw_count = df.count()
+        log_to_s3(f"{name}: Record count before cleaning: {raw_count}", context=name)
 
-print("ETL process completed.")
+        # Drop nulls
+        df_cleaned = df.dropna()
+
+        # Log post-clean row count
+        cleaned_count = df_cleaned.count()
+        log_to_s3(f"{name}: Record count after cleaning: {cleaned_count}", context=name)
+
+        # Write to S3 in Parquet format
+        df_cleaned.write.mode("overwrite").parquet(output_path)
+
+        log_to_s3(f"Completed processing for dataset: {name}", context=name)
+
+    except Exception as e:
+        log_to_s3(f"Error processing dataset {name}: {str(e)}", level="ERROR", context=name)
+
+log_to_s3("ETL process completed successfully", context="main")
 spark.stop()
