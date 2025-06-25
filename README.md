@@ -1,3 +1,10 @@
+## Big Data Processing with EMR
 
-create conf/spark-defaults.conf
-custom dockerfile needed
+#### Step Function - State Machine
+
+![alt text](misc/stepfunctions_graph.png)
+
+
+#### Glue Tables
+
+![alt text](misc/image-1.png)

@@ -117,15 +117,15 @@ table1_root_path = f"s3a://{presentation_bucket}/Vehicle_and_Location_Performanc
 try:
     # Try to load from current organized location first
     df_table1 = spark.read.parquet(table1_current_path)
-    print(f"✓ Loaded Table 1 from organized location: {table1_current_path}")
+    print(f"Loaded Table 1 from organized location: {table1_current_path}")
 except:
     try:
         # If not found, try loading from root level
         df_table1 = spark.read.parquet(table1_root_path)
-        print(f"✓ Loaded Table 1 from root location: {table1_root_path}")
-        print("ℹ️  Table will be moved to organized structure after KPI computation")
+        print(f" Loaded Table 1 from root location: {table1_root_path}")
+        print("  Table will be moved to organized structure after KPI computation")
     except Exception as e:
-        print(f"❌ Error: Could not find Table 1 in presentation bucket")
+        print(f" Error: Could not find Table 1 in presentation bucket")
         print(f"   Looked in: {table1_current_path}")
         print(f"   Looked in: {table1_root_path}")
         print(f"   Error: {e}")
@@ -144,8 +144,8 @@ print(f"Available columns: {available_columns}")
 
 # Since Table 1 doesn't have timestamp columns, we'll work with the available data
 # The KPIs will focus on transaction amounts, locations, and vehicle types
-print("ℹ️  Table 1 contains transaction data without timestamps")
-print("ℹ️  KPIs will focus on revenue, transactions, and vehicle utilization metrics")
+print(" Table 1 contains transaction data without timestamps")
+print("KPIs will focus on revenue, transactions, and vehicle utilization metrics")
 
 # ----------------------------------------
 # Compute KPI Metrics
@@ -235,12 +235,12 @@ total_transactions = df_table1.count()
 print(f"✓ Total Revenue: ${total_revenue:,.2f}")
 print(f"✓ Total Transactions: {total_transactions:,}")
 
-print(f"\n✅ All tables successfully written to s3://{presentation_bucket}/Vehicle_Location_Analytics/")
-print("📋 Ready for AWS Glue Data Catalog crawling!")
+print(f"\nAll tables successfully written to s3://{presentation_bucket}/Vehicle_Location_Analytics/")
+print(" Ready for AWS Glue Data Catalog crawling!")
 
 # ----------------------------------------
 # Cleanup
 # ----------------------------------------
 
 spark.stop()
-print("\n🎉 Spark job completed successfully!")
+print("\nSpark job completed successfully!")
