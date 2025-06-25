@@ -1,5 +1,9 @@
 ## Big Data Processing with EMR
 
+#### Data Architecture
+
+![alt text](misc/data_architecture_emr.drawio.png)
+
 #### Step Function - State Machine
 
 ![alt text](misc/stepfunctions_graph.png)
@@ -49,7 +53,7 @@ The main orchestration engine that manages the entire pipeline workflow:
 ### 3. Data Flow
 
 ```
-Raw Data (CSV) → EMR Transformation → Curated Data (Parquet) → EMR Analytics → Presentation Layer → Athena Queries
+Raw Data (CSV) → EMR Extraction → EMR Transformation → Curated Data (Parquet) → EMR Spark Jobs → Presentation Layer → Athena Queries
 ```
 
 ## Key Features
