@@ -2,7 +2,7 @@
 
 #### Data Architecture
 
-![alt text](misc/data_architecture_emr.drawio.png)
+![alt text](misc/data_architecture.drawio.png)
 
 #### Step Function - State Machine
 
